@@ -191,7 +191,7 @@ const ProfileScreen = ({ navigation }) => {
       // On web, the image data may be available via uri instead of base64
       let imageData = selectedAsset.base64;
       let mimeType = selectedAsset.mimeType || "image/jpeg";
-      
+
       if (!imageData && selectedAsset.uri) {
         // For web, fetch the image and convert to base64
         if (Platform.OS === "web") {
@@ -212,24 +212,26 @@ const ProfileScreen = ({ navigation }) => {
               const response = await fetch(selectedAsset.uri);
               const blob = await response.blob();
               mimeType = blob.type || mimeType;
-              
+
               // Convert blob to base64
               const reader = new FileReader();
               imageData = await new Promise((resolve, reject) => {
                 reader.onloadend = () => {
-                  const base64String = reader.result.split(',')[1];
+                  const base64String = reader.result.split(",")[1];
                   resolve(base64String);
                 };
                 reader.onerror = reject;
                 reader.readAsDataURL(blob);
               });
             } catch (fetchError) {
-              throw new Error("Could not fetch image data: " + fetchError.message);
+              throw new Error(
+                "Could not fetch image data: " + fetchError.message,
+              );
             }
           }
         }
       }
-      
+
       if (!imageData) {
         throw new Error("Could not read selected image data.");
       }
@@ -240,7 +242,7 @@ const ProfileScreen = ({ navigation }) => {
       const extension =
         (selectedAsset.fileName || "avatar.jpg").split(".").pop() || "jpg";
       const filePath = `${user.id}/${Date.now()}-avatar.${extension}`;
-      
+
       // Convert base64 to Blob for upload (works on both web and native)
       const byteCharacters = atob(imageData);
       const byteNumbers = new Array(byteCharacters.length);
