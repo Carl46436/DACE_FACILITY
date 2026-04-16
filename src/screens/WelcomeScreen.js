@@ -3,33 +3,40 @@
 // Landing page with login and registration options
 // ============================================================
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
-  View, Text, ScrollView, StyleSheet, KeyboardAvoidingView,
-  Platform, Alert, TouchableOpacity,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, fontSize } from '../theme/colors';
-import InputField from '../components/InputField';
-import CustomButton from '../components/CustomButton';
-import RoleSelector from '../components/RoleSelector';
-import { useAuth } from '../stores/authStore';
-import { validators } from '../utils/validators';
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, fontSize } from "../theme/colors";
+import InputField from "../components/InputField";
+import CustomButton from "../components/CustomButton";
+import RoleSelector from "../components/RoleSelector";
+import { useAuth } from "../stores/authStore";
+import { validators } from "../utils/validators";
 
 const WelcomeScreen = () => {
   const { login, register, isLoading, error, clearError } = useAuth();
-  const [mode, setMode] = useState('login'); // 'login' or 'register'
+  const [errorType, setErrorType] = useState(null);
+  const [mode, setMode] = useState("login"); // 'login' or 'register'
 
   // Login form
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Register form extras
-  const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState('');
-  const [department, setDepartment] = useState('');
-  const [phone, setPhone] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("");
+  const [department, setDepartment] = useState("");
+  const [phone, setPhone] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [formErrors, setFormErrors] = useState({});
 
@@ -72,7 +79,7 @@ const WelcomeScreen = () => {
     const errors = {};
     const emailErr = validators.email(email);
     if (emailErr) errors.email = emailErr;
-    if (!password) errors.password = 'Password is required.';
+    if (!password) errors.password = "Password is required.";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -83,10 +90,11 @@ const WelcomeScreen = () => {
     if (emailErr) errors.email = emailErr;
     const passwordErr = validators.password(password);
     if (passwordErr) errors.password = passwordErr;
-    if (password !== confirmPassword) errors.confirmPassword = 'Passwords do not match.';
+    if (password !== confirmPassword)
+      errors.confirmPassword = "Passwords do not match.";
     const nameErr = validators.fullName(fullName);
     if (nameErr) errors.fullName = nameErr;
-    if (!role) errors.role = 'Please select a role.';
+    if (!role) errors.role = "Please select a role.";
     const phoneErr = validators.phone(phone);
     if (phoneErr) errors.phone = phoneErr;
     setFormErrors(errors);
@@ -95,8 +103,12 @@ const WelcomeScreen = () => {
 
   const handleLogin = async () => {
     clearError();
+    setErrorType(null);
     if (!validateLoginForm()) return;
-    await login(email.trim().toLowerCase(), password);
+    const result = await login(email.trim().toLowerCase(), password);
+    if (!result.success && result.errorType) {
+      setErrorType(result.errorType);
+    }
   };
 
   const handleRegister = async () => {
@@ -111,37 +123,47 @@ const WelcomeScreen = () => {
       phone: phone.trim(),
     });
     if (result.success) {
-      Alert.alert('Registration Successful', result.message || 'Your account is ready for testing.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            setMode('login');
-            setPassword('');
-            setConfirmPassword('');
+      Alert.alert(
+        "Registration Successful",
+        result.message ||
+          "Your account is pending admin approval. You will be notified once approved.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setMode("login");
+              setPassword("");
+              setConfirmPassword("");
+            },
           },
-        },
-      ]);
+        ],
+      );
     }
   };
 
   const switchMode = () => {
-    setMode(mode === 'login' ? 'register' : 'login');
+    setMode(mode === "login" ? "register" : "login");
     clearError();
     setFormErrors({});
   };
 
   const canSubmit = useMemo(() => {
-    if (mode === 'login') {
+    if (mode === "login") {
       return Boolean(email.trim() && password);
     }
 
-    return Boolean(email.trim() && password && confirmPassword && fullName.trim() && role);
+    return Boolean(
+      email.trim() && password && confirmPassword && fullName.trim() && role,
+    );
   }, [confirmPassword, email, fullName, mode, password, role]);
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="none"
@@ -152,36 +174,44 @@ const WelcomeScreen = () => {
             <Ionicons name="school" size={48} color={colors.white} />
           </View>
           <Text style={styles.appName}>DACE Facility</Text>
-          <Text style={styles.tagline}>
-            Maintenance & Reporting System
-          </Text>
+          <Text style={styles.tagline}>Maintenance & Reporting System</Text>
         </View>
 
         {/* Form Card */}
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>
-            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+            {mode === "login" ? "Welcome Back" : "Create Account"}
           </Text>
           <Text style={styles.formSubtitle}>
-            {mode === 'login'
-              ? 'Sign in to continue'
-              : 'Register to submit reports and borrow items'}
+            {mode === "login"
+              ? "Sign in to continue"
+              : "Register to submit reports and borrow items"}
           </Text>
 
           {!!error && (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+              <Ionicons
+                name="alert-circle-outline"
+                size={18}
+                color={colors.danger}
+              />
               <Text style={styles.errorBannerText}>{error}</Text>
+              {errorType === "pending_approval" && (
+                <Text style={styles.errorHintText}>
+                  Please wait for your administrator to approve your account.
+                  This typically takes 1-24 hours.
+                </Text>
+              )}
             </View>
           )}
 
-          {mode === 'register' && (
+          {mode === "register" && (
             <>
               <InputField
                 label="Full Name"
                 value={fullName}
                 onChangeText={handleFullNameChange}
-                placeholder="John Doe"
+                placeholder="John Kyle Perez Dela Cruz"
                 icon="person-outline"
                 error={formErrors.fullName}
                 autoCapitalize="words"
@@ -198,7 +228,7 @@ const WelcomeScreen = () => {
             label="Email"
             value={email}
             onChangeText={handleEmailChange}
-            placeholder="your@email.com"
+            placeholder="your@gmail.com"
             icon="mail-outline"
             keyboardType="email-address"
             autoCapitalize="none"
@@ -215,7 +245,7 @@ const WelcomeScreen = () => {
             error={formErrors.password}
           />
 
-          {mode === 'register' && (
+          {mode === "register" && (
             <>
               <InputField
                 label="Confirm Password"
@@ -230,14 +260,14 @@ const WelcomeScreen = () => {
                 label="Department (Optional)"
                 value={department}
                 onChangeText={handleDepartmentChange}
-                placeholder="e.g. Science Department"
+                placeholder="e.g. HUMSS,STEM,GAS"
                 icon="business-outline"
               />
               <InputField
                 label="Phone (Optional)"
                 value={phone}
                 onChangeText={handlePhoneChange}
-                placeholder="+1234567890"
+                placeholder="+639999999999"
                 icon="call-outline"
                 keyboardType="phone-pad"
                 error={formErrors.phone}
@@ -246,21 +276,21 @@ const WelcomeScreen = () => {
           )}
 
           <CustomButton
-            title={mode === 'login' ? 'Sign In' : 'Create Account'}
-            onPress={mode === 'login' ? handleLogin : handleRegister}
+            title={mode === "login" ? "Sign In" : "Create Account"}
+            onPress={mode === "login" ? handleLogin : handleRegister}
             loading={isLoading}
-            icon={mode === 'login' ? 'log-in-outline' : 'person-add-outline'}
+            icon={mode === "login" ? "log-in-outline" : "person-add-outline"}
             size="lg"
             disabled={!canSubmit}
           />
 
           <TouchableOpacity style={styles.switchMode} onPress={switchMode}>
             <Text style={styles.switchText}>
-              {mode === 'login'
+              {mode === "login"
                 ? "Don't have an account? "
-                : 'Already have an account? '}
+                : "Already have an account? "}
               <Text style={styles.switchLink}>
-                {mode === 'login' ? 'Sign Up' : 'Sign In'}
+                {mode === "login" ? "Sign Up" : "Sign In"}
               </Text>
             </Text>
           </TouchableOpacity>
@@ -279,7 +309,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   hero: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 80,
     paddingBottom: spacing.xl,
   },
@@ -287,19 +317,19 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: spacing.md,
   },
   appName: {
     fontSize: fontSize.heading,
-    fontWeight: '800',
+    fontWeight: "800",
     color: colors.white,
   },
   tagline: {
     fontSize: fontSize.sm,
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
     marginTop: spacing.xs,
   },
   formCard: {
@@ -313,7 +343,7 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: fontSize.xxl,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -323,12 +353,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: '#FEECEE',
+    backgroundColor: "#FEECEE",
     borderWidth: 1,
-    borderColor: '#F7C7CD',
+    borderColor: "#F7C7CD",
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -338,8 +368,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.danger,
   },
+  errorHintText: {
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    flex: 1,
+  },
   switchMode: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
@@ -349,7 +385,7 @@ const styles = StyleSheet.create({
   },
   switchLink: {
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 

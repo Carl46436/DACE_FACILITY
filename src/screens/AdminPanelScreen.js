@@ -32,27 +32,46 @@ const AdminPanelScreen = ({ navigation, route }) => {
   const [activityLogs, setActivityLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [logsPage, setLogsPage] = useState(1);
+  const [hasMoreLogs, setHasMoreLogs] = useState(true);
+  const [isLoadingMoreLogs, setIsLoadingMoreLogs] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (logsPageNum = 1, appendLogs = false) => {
     try {
       const [analyticsRes, pendingRes, logsRes] = await Promise.allSettled([
         api.admin.getAnalytics(),
         api.admin.getPendingApprovals(),
-        api.admin.getActivityLogs({ page: 1, limit: 20 }),
+        api.admin.getActivityLogs({ page: logsPageNum, limit: 20 }),
       ]);
 
       if (analyticsRes.status === "fulfilled")
         setAnalytics(analyticsRes.value.data);
       if (pendingRes.status === "fulfilled")
         setPendingUsers(pendingRes.value.data || []);
-      if (logsRes.status === "fulfilled")
-        setActivityLogs(logsRes.value.data?.data || []);
+      if (logsRes.status === "fulfilled") {
+        const newLogs = logsRes.value.data?.data || [];
+        if (appendLogs) {
+          setActivityLogs((prev) => [...prev, ...newLogs]);
+        } else {
+          setActivityLogs(newLogs);
+        }
+        setHasMoreLogs(newLogs.length === 20);
+        setLogsPage(logsPageNum);
+      }
     } catch (error) {
       console.log("Admin load error:", error.message);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
+      setIsLoadingMoreLogs(false);
     }
+  };
+
+  const handleLoadMoreLogs = async () => {
+    if (isLoadingMoreLogs || !hasMoreLogs) return;
+    setIsLoadingMoreLogs(true);
+    const nextPage = logsPage + 1;
+    await loadData(nextPage, true);
   };
 
   useEffect(() => {
@@ -375,26 +394,40 @@ const AdminPanelScreen = ({ navigation, route }) => {
             {activityLogs.length === 0 ? (
               <Text style={styles.emptyText}>No activity logs yet.</Text>
             ) : (
-              activityLogs.map((log) => (
-                <View key={log.id} style={styles.logItem}>
-                  <View style={styles.logIcon}>
-                    <Ionicons
-                      name="time-outline"
-                      size={16}
-                      color={colors.textMuted}
+              <>
+                {activityLogs.map((log) => (
+                  <View key={log.id} style={styles.logItem}>
+                    <View style={styles.logIcon}>
+                      <Ionicons
+                        name="time-outline"
+                        size={16}
+                        color={colors.textMuted}
+                      />
+                    </View>
+                    <View style={styles.logContent}>
+                      <Text style={styles.logAction}>
+                        {log.action.replace(/_/g, " ")}
+                      </Text>
+                      <Text style={styles.logMeta}>
+                        {log.user?.full_name || "System"} | {log.entity_type} |{" "}
+                        {formatRelativeTime(log.created_at)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+                {hasMoreLogs && (
+                  <View style={styles.loadMoreContainer}>
+                    <CustomButton
+                      title="Load More"
+                      onPress={handleLoadMoreLogs}
+                      loading={isLoadingMoreLogs}
+                      disabled={isLoadingMoreLogs}
+                      size="sm"
+                      variant="outline"
                     />
                   </View>
-                  <View style={styles.logContent}>
-                    <Text style={styles.logAction}>
-                      {log.action.replace(/_/g, " ")}
-                    </Text>
-                    <Text style={styles.logMeta}>
-                      {log.user?.full_name || "System"} | {log.entity_type} |{" "}
-                      {formatRelativeTime(log.created_at)}
-                    </Text>
-                  </View>
-                </View>
-              ))
+                )}
+              </>
             )}
           </View>
         )}
@@ -532,6 +565,7 @@ const styles = StyleSheet.create({
   },
   logText: { fontSize: fontSize.sm, color: colors.text, flex: 1 },
   logMeta: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  loadMoreContainer: { paddingVertical: spacing.md, alignItems: "center" },
 });
 
 export default AdminPanelScreen;

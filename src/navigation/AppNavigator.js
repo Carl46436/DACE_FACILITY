@@ -3,32 +3,37 @@
 // Main navigation structure with auth flow and tab navigation
 // ============================================================
 
-import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuth, AuthProvider } from '../stores/authStore';
-import { ReportProvider } from '../stores/reportStore';
-import { BorrowProvider } from '../stores/borrowStore';
-import LoadingSpinner from '../components/LoadingSpinner';
+import React, { useEffect } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+  useAuth,
+  AuthProvider,
+  registerReportClear,
+  registerBorrowClear,
+} from "../stores/authStore";
+import { ReportProvider, useReports } from "../stores/reportStore";
+import { BorrowProvider, useBorrow } from "../stores/borrowStore";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 // Screens
-import WelcomeScreen from '../screens/WelcomeScreen';
-import RoleDashboardScreen from '../screens/RoleDashboardScreen';
-import ReportSubmissionScreen from '../screens/ReportSubmissionScreen';
-import ReportsListScreen from '../screens/ReportsListScreen';
-import ReportDetailScreen from '../screens/ReportDetailScreen';
-import QRScannerScreen from '../screens/QRScannerScreen';
-import BorrowingScreen from '../screens/BorrowingScreen';
-import AdminPanelScreen from '../screens/AdminPanelScreen';
-import AdminItemsScreen from '../screens/AdminItemsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import NotificationsScreen from '../screens/NotificationsScreen';
+import WelcomeScreen from "../screens/WelcomeScreen";
+import RoleDashboardScreen from "../screens/RoleDashboardScreen";
+import ReportSubmissionScreen from "../screens/ReportSubmissionScreen";
+import ReportsListScreen from "../screens/ReportsListScreen";
+import ReportDetailScreen from "../screens/ReportDetailScreen";
+import QRScannerScreen from "../screens/QRScannerScreen";
+import BorrowingScreen from "../screens/BorrowingScreen";
+import AdminPanelScreen from "../screens/AdminPanelScreen";
+import AdminItemsScreen from "../screens/AdminItemsScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+import NotificationsScreen from "../screens/NotificationsScreen";
 
 const Stack = createNativeStackNavigator();
 
 const screenOptions = {
   headerShown: false,
-  animation: 'slide_from_right',
+  animation: "slide_from_right",
 };
 
 /**
@@ -59,6 +64,21 @@ const AppStack = () => (
 );
 
 /**
+ * Store registrar - registers clear functions with auth store.
+ */
+const StoreRegistrar = () => {
+  const { clearData: clearReportData } = useReports();
+  const { clearData: clearBorrowData } = useBorrow();
+
+  useEffect(() => {
+    registerReportClear(clearReportData);
+    registerBorrowClear(clearBorrowData);
+  }, [clearReportData, clearBorrowData]);
+
+  return null;
+};
+
+/**
  * Root navigator - handles auth state switching.
  */
 const RootNavigator = () => {
@@ -74,6 +94,7 @@ const RootNavigator = () => {
 
   return (
     <NavigationContainer>
+      <StoreRegistrar />
       {isAuthenticated ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );

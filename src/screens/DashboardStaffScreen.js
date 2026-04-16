@@ -15,7 +15,7 @@ import { api } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const DashboardStaffScreen = ({ navigation }) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [recentReports, setRecentReports] = useState([]);
   const [stats, setStats] = useState({
     assignedToMe: 0,
@@ -98,17 +98,25 @@ const DashboardStaffScreen = ({ navigation }) => {
             <Text style={styles.userName}>{user?.full_name}</Text>
             <Text style={styles.userRole}>{formatRole(user?.role)}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.notifButton}
-            onPress={() => navigation?.navigate?.('Notifications')}
-          >
-            <Ionicons name="notifications-outline" size={24} color={colors.white} />
-            {unreadCount > 0 && (
-              <View style={styles.notifBadge}>
-                <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.notifButton}
+              onPress={() => navigation?.navigate?.('Notifications')}
+            >
+              <Ionicons name="notifications-outline" size={24} color={colors.white} />
+              {unreadCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => navigation?.navigate?.('Profile')}
+            >
+              <Ionicons name="person-circle-outline" size={24} color={colors.white} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -209,11 +217,6 @@ const DashboardStaffScreen = ({ navigation }) => {
         )}
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-        <Text style={styles.logoutText}>Sign Out</Text>
-      </TouchableOpacity>
-
       <View style={{ height: 40 }} />
     </ScrollView>
   );
@@ -240,11 +243,21 @@ const styles = StyleSheet.create({
   welcomeText: { fontSize: fontSize.xs, color: 'rgba(255,255,255,0.7)' },
   userName: { fontSize: fontSize.xl, fontWeight: '700', color: colors.white },
   userRole: { fontSize: fontSize.xs, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   notifButton: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center', alignItems: 'center',
     position: 'relative',
+  },
+  profileButton: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center', alignItems: 'center',
   },
   notifBadge: {
     position: 'absolute',
@@ -295,12 +308,6 @@ const styles = StyleSheet.create({
   },
   statNumber: { fontSize: fontSize.xxl, fontWeight: '800', color: colors.text },
   statLabel: { fontSize: fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  logoutButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    padding: spacing.md, marginHorizontal: spacing.md, marginTop: spacing.lg,
-    borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.dangerLight,
-  },
-  logoutText: { fontSize: fontSize.md, color: colors.danger, fontWeight: '600', marginLeft: spacing.sm },
 });
 
 export default DashboardStaffScreen;
